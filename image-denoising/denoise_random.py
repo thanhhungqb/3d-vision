@@ -1,3 +1,4 @@
+from matplotlib.pyplot import gray
 from numpy import *
 from numpy import random
 from scipy.ndimage import filters
@@ -14,4 +15,5 @@ U, T = rof.denoise(im, im)
 G = filters.gaussian_filter(im, 10)
 
 # save the result
+gray()
 save_3_images('out/random.png', im, G, U)
