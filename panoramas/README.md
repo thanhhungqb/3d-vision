@@ -19,3 +19,9 @@ Enviroment install (Ubuntu 18.04)
 - linux command to export **$PATH**
 
         export PATH=$PP:$PATH
+
+Image Magick tools were used in this project. Example to convert pgm image to png image we can use following command:
+
+        convert lake_500_1.sift.pgm lake_500_1.sift.png
+        
+In this command convert is a tool by Image Magick.
