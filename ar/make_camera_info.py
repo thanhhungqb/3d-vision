@@ -39,6 +39,7 @@ ndx = matches.nonzero()[0]
 fp = homography.make_homog(l0[ndx, :2].T)
 ndx2 = [int(matches[i]) for i in ndx]
 tp = homography.make_homog(l1[ndx2, :2].T)
+
 model = homography.RansacModel()
 H = homography.H_from_ransac(fp, tp, model)[0]  # TODO fix 0
 
@@ -84,7 +85,6 @@ with open('ar_camera.pkl', 'w') as f:
 figure()
 imshow(im0)
 plot(box_cam1[0, :], box_cam1[1, :], linewidth=3)
-show()
 
 figure()
 imshow(im1)
