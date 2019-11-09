@@ -1,3 +1,5 @@
+from pylab import *
+
 import pickle
 
 import numpy
@@ -6,6 +8,11 @@ from numpy import dot, linalg, array, hstack, cross
 
 import util
 from ref import homography, camera, sift
+
+im0_name = 'data/book_frontal.JPG'
+im1_name = 'data/book_perspective.JPG'
+im0 = array(Image.open(im0_name))
+im1 = array(Image.open(im1_name))
 
 
 def my_calibration(sz):
@@ -47,9 +54,11 @@ def cube_points(c, wid):
 
 
 # compute features
-sift.process_image('data/book_frontal.JPG', 'im0.sift')
+is_process_sift = False
+if is_process_sift:
+    sift.process_image(im0_name, 'im0.sift')
+    sift.process_image(im1_name, 'im1.sift')
 l0, d0 = util.read_features_from_file('im0.sift')
-sift.process_image('data/book_perspective.JPG', 'im1.sift')
 l1, d1 = util.read_features_from_file('im1.sift')
 # match features and estimate homography
 matches = sift.match_twosided(d0, d1)
@@ -59,6 +68,8 @@ ndx2 = [int(matches[i]) for i in ndx]
 tp = homography.make_homog(l1[ndx2, :2].T)
 model = homography.RansacModel()
 H = homography.H_from_ransac(fp, tp, model)[0]  # TODO fix 0
+sift.plot_matches(im0, im1, l0, l1, matches)
+show()
 
 # ##############################################
 print('H', H)
@@ -95,10 +106,7 @@ with open('ar_camera.pkl', 'w') as f:
     pickle.dump(K, f)
     pickle.dump(dot(linalg.inv(K), cam2.P), f)
 
-from pylab import *
 
-im0 = array(Image.open('data/book_frontal.JPG'))
-im1 = array(Image.open('data/book_perspective.JPG'))
 # 2D projection of bottom square
 figure()
 imshow(im0)
@@ -108,5 +116,6 @@ show()
 figure()
 imshow(im1)
 plot(box_trans[0, :], box_trans[1, :], linewidth=3)
+# plot(box_cam2[0, :], box_cam2[1, :], linewidth=3)
 
 show()
