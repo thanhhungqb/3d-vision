@@ -18,8 +18,10 @@ def read_features_from_file(filename):
     return a[:, :4], a[:, 4:]  # feature locations, descriptors
 
 
-featname = ['imgs/cnu_' + str(i) + '.sift' for i in range(5)]
-imname = ['imgs/cnu_' + str(i) + '.jpg' for i in range(5)]
+N = 5
+h = 'lake_500'
+featname = ['imgs/{}_{}.sift'.format(h, i) for i in range(N)]
+imname = ['imgs/{}_{}.jpg'.format(h, i) for i in range(N)]
 l = {}
 d = {}
 for i in range(5):
@@ -58,15 +60,18 @@ delta = 2000  # for padding and translation
 im1 = array(Image.open(imname[1]))
 im2 = array(Image.open(imname[2]))
 im_12 = warp.panorama(H_12, im1, im2, delta, delta)
+imsave('imgs/{}-out-12.png'.format(h), im_12)
+
 im1 = array(Image.open(imname[0]))
-im_02 = warp.panorama(dot(H_12, H_01), im1, im_12, delta, delta)
+im_02 = warp.panorama(dot(H_12, H_01), im1, im_12, delta + delta)
+# im_02 = warp.panorama(dot(H_01, H_12), im1, im_12, delta, delta)
+imsave('imgs/{}-out-012.png'.format(h), im_02)
+
 im1 = array(Image.open(imname[3]))
 im_32 = warp.panorama(H_32, im1, im_02, delta, delta)
-# im1 = array(Image.open(imname[j + 1]))
+imsave('imgs/{}-out-0123.png'.format(h), im_32)
+
 im1 = array(Image.open(imname[3 + 1]))
 im_42 = warp.panorama(dot(H_32, H_43), im1, im_32, delta, 2 * delta)
 
-imsave('imgs/out-12.png', im_12)
-imsave('imgs/out-012.png', im_02)
-imsave('imgs/out-0123.png', im_32)
-imsave('imgs/out-42.png', im_42)
+imsave('imgs/{}-out-42.png'.format(h), im_42)
