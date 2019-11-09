@@ -32,6 +32,7 @@ if is_process_sift:
     sift.process_image(im1_name, 'im1.sift')
 l0, d0 = util.read_features_from_file('im0.sift')
 l1, d1 = util.read_features_from_file('im1.sift')
+
 # match features and estimate homography
 matches = sift.match_twosided(d0, d1)
 ndx = matches.nonzero()[0]
@@ -40,6 +41,7 @@ ndx2 = [int(matches[i]) for i in ndx]
 tp = homography.make_homog(l1[ndx2, :2].T)
 model = homography.RansacModel()
 H = homography.H_from_ransac(fp, tp, model)[0]  # TODO fix 0
+
 sift.plot_matches(im0, im1, l0, l1, matches)
 show()
 
@@ -47,19 +49,17 @@ show()
 print('H', H)
 # camera calibration
 K = my_calibration((747, 1000))
+
 # 3D points at plane z=0 with sides of length 0.2
 box = util.cube_points([0, 0, 0.1], 0.1)
+
 # project bottom square in first image
 cam1 = camera.Camera(hstack((K, dot(K, array([[0], [0], [-1]])))))
+
 # first points are the bottom square
 box_cam1 = cam1.project(homography.make_homog(box[:, :5]))
 
 # use H to transfer points to the second image
-print('t', box_cam1)
-print('test', H.shape, box_cam1.shape)
-tmp = dot(H, box_cam1)
-print('test tmp', tmp)
-print('test box_cam1', box_cam1, dot(H, box_cam1))
 box_trans = homography.normalize(dot(H, box_cam1))
 
 # compute second camera matrix from cam1 and H
@@ -67,8 +67,10 @@ cam2 = camera.Camera(dot(H, cam1.P))
 A = dot(linalg.inv(K), cam2.P[:, :3])
 A = array([A[:, 0], A[:, 1], cross(A[:, 0], A[:, 1])]).T
 cam2.P[:, :3] = dot(K, A)
+
 # project with the second camera
 box_cam2 = cam2.project(homography.make_homog(box))
+
 # test: projecting point on z=0 should give the same
 point = array([1, 1, 0, 1]).T
 print homography.normalize(dot(dot(H, cam1.P), point))
