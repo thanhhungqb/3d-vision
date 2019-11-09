@@ -25,34 +25,6 @@ def my_calibration(sz):
     return K
 
 
-def cube_points(c, wid):
-    """ Creates a list of points for plotting
-    a cube with plot. (the first 5 points are
-    the bottom square, some sides repeated). """
-    p = []
-    # bottom
-    p.append([c[0] - wid, c[1] - wid, c[2] - wid])
-    p.append([c[0] - wid, c[1] + wid, c[2] - wid])
-    p.append([c[0] + wid, c[1] + wid, c[2] - wid])
-    p.append([c[0] + wid, c[1] - wid, c[2] - wid])
-    p.append([c[0] - wid, c[1] - wid, c[2] - wid])  # same as first to close plot
-    # top
-    p.append([c[0] - wid, c[1] - wid, c[2] + wid])
-    p.append([c[0] - wid, c[1] + wid, c[2] + wid])
-    p.append([c[0] + wid, c[1] + wid, c[2] + wid])
-    p.append([c[0] + wid, c[1] - wid, c[2] + wid])
-    p.append([c[0] - wid, c[1] - wid, c[2] + wid])  # same as first to close plot
-    # vertical sides
-    p.append([c[0] - wid, c[1] - wid, c[2] + wid])
-    p.append([c[0] - wid, c[1] + wid, c[2] + wid])
-    p.append([c[0] - wid, c[1] + wid, c[2] - wid])
-    p.append([c[0] + wid, c[1] + wid, c[2] - wid])
-    p.append([c[0] + wid, c[1] + wid, c[2] + wid])
-    p.append([c[0] + wid, c[1] - wid, c[2] + wid])
-    p.append([c[0] + wid, c[1] - wid, c[2] - wid])
-    return array(p).T
-
-
 # compute features
 is_process_sift = False
 if is_process_sift:
@@ -76,7 +48,7 @@ print('H', H)
 # camera calibration
 K = my_calibration((747, 1000))
 # 3D points at plane z=0 with sides of length 0.2
-box = cube_points([0, 0, 0.1], 0.1)
+box = util.cube_points([0, 0, 0.1], 0.1)
 # project bottom square in first image
 cam1 = camera.Camera(hstack((K, dot(K, array([[0], [0], [-1]])))))
 # first points are the bottom square
@@ -105,7 +77,6 @@ print cam2.project(point)
 with open('ar_camera.pkl', 'w') as f:
     pickle.dump(K, f)
     pickle.dump(dot(linalg.inv(K), cam2.P), f)
-
 
 # 2D projection of bottom square
 figure()
