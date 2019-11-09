@@ -1,32 +1,43 @@
-from pylab import *
-
-import pickle
-
-import numpy
 from PIL import Image
-from numpy import dot, linalg, array, hstack, cross
+from pylab import *
 
 import util
 from ref import homography, camera, sift
 
 im0_name = 'data/book_frontal.JPG'
 im1_name = 'data/book_perspective.JPG'
+wh = 1000, 747
+# wh = 747, 1000
+im0_name = 'data/d1-2.JPG'
+im1_name = 'data/d3-2.JPG'
+wh = 1215, 1634
+
 im0 = array(Image.open(im0_name))
 im1 = array(Image.open(im1_name))
 
 
-def my_calibration(sz):
+def my_calibration_(sz):
     row, col = sz
     fx = 2555 * col / 2592
     fy = 2586 * row / 1936
-    K = numpy.diag([fx, fy, 1])
+    K = diag([fx, fy, 1])
+    K[0, 2] = 0.5 * col
+    K[1, 2] = 0.5 * row
+    return K
+
+
+def my_calibration(sz):
+    row, col = sz
+    fx = 1340.5 * col / 1208
+    fy = 1368.6 * row / 1426
+    K = diag([fx, fy, 1])
     K[0, 2] = 0.5 * col
     K[1, 2] = 0.5 * row
     return K
 
 
 # compute features
-is_process_sift = False
+is_process_sift = True
 if is_process_sift:
     sift.process_image(im0_name, 'im0.sift')
     sift.process_image(im1_name, 'im1.sift')
@@ -34,14 +45,15 @@ l0, d0 = util.read_features_from_file('im0.sift')
 l1, d1 = util.read_features_from_file('im1.sift')
 
 # match features and estimate homography
-matches = sift.match_twosided(d0, d1)
+matches = sift.match(d0, d1)  # match_twosided
 ndx = matches.nonzero()[0]
 fp = homography.make_homog(l0[ndx, :2].T)
 ndx2 = [int(matches[i]) for i in ndx]
 tp = homography.make_homog(l1[ndx2, :2].T)
 
 model = homography.RansacModel()
-H = homography.H_from_ransac(fp, tp, model)[0]  # TODO fix 0
+H = homography.H_from_ransac(fp, tp, model)[0]
+# H = homography.H_from_ransac(tp, fp, model)[0]
 
 sift.plot_matches(im0, im1, l0, l1, matches)
 show()
@@ -49,7 +61,8 @@ show()
 # ##############################################
 print('H', H)
 # camera calibration
-K = my_calibration((747, 1000))
+K = my_calibration((wh[1], wh[0]))
+print('K', K)
 
 # 3D points at plane z=0 with sides of length 0.2
 box = util.cube_points([0, 0, 0.1], 0.1)
@@ -78,8 +91,11 @@ print homography.normalize(dot(dot(H, cam1.P), point))
 print cam2.project(point)
 
 with open('ar_camera.pkl', 'w') as f:
+    import pickle
+
     pickle.dump(K, f)
     pickle.dump(dot(linalg.inv(K), cam2.P), f)
+    pickle.dump(dot(linalg.inv(K), cam1.P), f)
 
 # 2D projection of bottom square
 figure()
@@ -90,5 +106,10 @@ figure()
 imshow(im1)
 plot(box_trans[0, :], box_trans[1, :], linewidth=3)
 # plot(box_cam2[0, :], box_cam2[1, :], linewidth=3)
+
+figure()
+imshow(im1)
+# plot(box_trans[0, :], box_trans[1, :], linewidth=3)
+plot(box_cam2[0, :], box_cam2[1, :], linewidth=3)
 
 show()

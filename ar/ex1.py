@@ -98,18 +98,19 @@ def draw_teapot(size):
 
 # glutSolidTeapot(45)
 
-
-width, height = 1000, 747
-
-
-# width, height = 747, 100
+def draw_im(path, K, Rt, tea_size=0.04):
+    draw_background(path)
+    set_projection_from_camera(K)
+    set_modelview_from_camera(Rt)
+    draw_teapot(tea_size)
 
 
 def setup():
     """ Setup window and pygame environment. """
     pygame.init()
-    pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF)
+    win = pygame.display.set_mode((width, height), OPENGL | DOUBLEBUF)
     pygame.display.set_caption('OpenGL AR demo')
+    return win
 
 
 # load camera data
@@ -118,7 +119,6 @@ with open('ar_camera.pkl', 'r') as f:
     Rt1 = pickle.load(f)
     Rt0 = pickle.load(f)
 
-setup()
 # draw_background('data/book_frontal.JPG')
 # draw_background('data/book_perspective.bmp')
 # set_projection_from_camera(K)
@@ -128,23 +128,28 @@ setup()
 
 im0_name = 'data/book_frontal.JPG'
 im1_name = 'data/book_perspective.JPG'
+im0_name = 'data/d1-2.JPG'
+im1_name = 'data/d2-2.JPG'
+im1_name = 'data/d3-2.JPG'
+width, height = 1000, 747
 
-
-def draw_im(path, K, Rt, tea_size=0.04):
-    draw_background(path)
-    set_projection_from_camera(K)
-    set_modelview_from_camera(Rt)
-    draw_teapot(tea_size)
+wh = 1215, 1634
+width, height = wh
+# width, height = 747, 100
 
 
 print(K, Rt0, Rt1)
 
-draw_im(im0_name, K, Rt0)
-# draw_im(im1_name, K, Rt1)
+win = setup()
 
-while True:
-    # pass
-    event = pygame.event.poll()
-    if event.type in (QUIT, KEYDOWN):
-        break
-    pygame.display.flip()
+# draw_im(im0_name, K, Rt0)
+draw_im(im1_name, K, Rt1)
+
+# while True:
+#     # pass
+#     event = pygame.event.poll()
+#     if event.type in (QUIT, KEYDOWN):
+#         break
+#     pygame.display.flip()
+
+pygame.image.save(win, "screenshot.jpeg")
