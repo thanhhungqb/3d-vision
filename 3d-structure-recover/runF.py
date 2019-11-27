@@ -3,7 +3,6 @@ import hashlib
 from PIL import Image
 from matplotlib.pyplot import *
 from numpy import *
-from numpy.linalg import *
 
 from ref import homography, camera
 from ref import sfm
@@ -19,20 +18,6 @@ if True:
 
 # ----------------------------------------------------
 # PREPARING FOR DATA
-K = array(
-    [
-        [2394, 0, 932],
-        [0, 2398, 628],
-        [0, 0, 1]
-    ])
-
-# my K
-K = array(
-    [
-        [2555, 0, 2592//2],
-        [0, 2586, 1936//2],
-        [0, 0, 1]
-    ])
 
 data_dir = 'data'
 os.mkdir(data_dir) if not os.path.exists(data_dir) else None
@@ -64,53 +49,47 @@ else:
         matches, ndx = c_dic['matches'], c_dic['ndx']
 
 sift.plot_matches(im1, im2, l1, l2, matches)
-show()
+# show()
 
 # make homogeneous and normalize with inv(K)
 x1 = homography.make_homog(l1[ndx, :2].T)
 ndx2 = [int(matches[i]) for i in ndx]
 x2 = homography.make_homog(l2[ndx2, :2].T)
-x1n = dot(inv(K), x1)
-x2n = dot(inv(K), x2)
 
-# estimate E with RANSAC, this module take time, so need cache
-cache_name = "{}/ransac-{}.data".format(data_dir, hashlib.md5(im1_name + im2_name).hexdigest())
-if not os.path.exists(cache_name):
-    print('run RanSac, take time')
-    model = sfm.RansacModel()
-    E, inliers = sfm.F_from_ransac(x1n, x2n, model)
-
-    with open(cache_name, 'w') as f:
-        data_dic = {'model': model, 'E': E, 'inliers': inliers}
-        pickle.dump(data_dic, f)
-else:
-    print('use RanSac cache')
-    with open(cache_name, 'r') as f:
-        data_dic = pickle.load(f)
-        model, E, inliers = data_dic['model'], data_dic['E'], data_dic['inliers']
-
-# compute camera matrices (P2 will be list of four solutions)
+# estimate F
+F = sfm.compute_fundamental(x1, x2)
 P1 = array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]])
-P2 = sfm.compute_P_from_essential(E)
+P2 = sfm.compute_P_from_fundamental(F)
+
 
 # ---------------------------------------------------------
 # pick the solution with points in front of cameras
-ind = 0
-maxres = 0
-for i in range(4):
-    # triangulate inliers and compute depth for each camera
-    X = sfm.triangulate(x1n[:, inliers], x2n[:, inliers], P1, P2[i])
-    d1 = dot(P1, X)[2]
-    d2 = dot(P2[i], X)[2]
-    if sum(d1 > 0) + sum(d2 > 0) > maxres:
-        maxres = sum(d1 > 0) + sum(d2 > 0)
-        ind = i
-        infront = (d1 > 0) & (d2 > 0)
+def refineX(X):
+    x1 = X[1]
+    mean = x1.mean()
+    std = x1.std()
+    idx = [i for i in range(len(x1)) if mean - 2 * std < x1[i] < mean + 2 * std]
 
-# triangulate inliers and remove points not in front of both cameras
-X = sfm.triangulate(x1n[:, inliers], x2n[:, inliers], P1, P2[ind])
-X = X[:, infront]
+    x2 = X[2]
+    mean, std = x2.mean(), x2.std()
+    idx = [i for i in idx if mean - 2 * std < x2[i] < mean + 2 * std]
 
+    x0 = X[0]
+    mean, std = x0.mean(), x0.std()
+    idx = [i for i in idx if mean - 2 * std < x0[i] < mean + 2 * std]
+
+    x1 = X[1][idx]
+    x2 = X[2][idx]
+    x3 = X[3][idx]
+    x0 = X[0][idx]
+    nX = np.array([x0, x1, x2, x3])
+    return nX
+
+
+X = sfm.triangulate(x1, x2, P1, P2)
+lX = len(X[0])
+X = refineX(X)
+print('test', lX, len(X[0]))
 # --------------------------------------------------------------
 # 3D plot
 fig = figure()
@@ -122,12 +101,10 @@ axis('off')
 # plot the projection of X
 # project 3D points
 cam1 = camera.Camera(P1)
-cam2 = camera.Camera(P2[ind])
+cam2 = camera.Camera(P2)
 x1p = cam1.project(X)
 x2p = cam2.project(X)
-# reverse K normalization
-x1p = dot(K, x1p)
-x2p = dot(K, x2p)
+
 figure()
 imshow(im1)
 gray()
@@ -136,6 +113,7 @@ gray()
 plot(x1p[1], x1p[0], 'o')
 plot(x1[1], x1[0], 'r.')
 axis('off')
+
 figure()
 imshow(im2)
 gray()
@@ -143,6 +121,5 @@ gray()
 # plot(x2[0], x2[1], 'r.')
 plot(x2p[1], x2p[0], 'o')
 plot(x2[1], x2[0], 'r.')
-
 axis('off')
 show()
