@@ -125,5 +125,5 @@ nu/
 tmp*
 *.sift
 out*
-
+/panoramas/imgs
 
