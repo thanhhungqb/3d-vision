@@ -1,7 +1,10 @@
+import hashlib
+import os
+
 from PIL import Image
 from pylab import *
 
-from ref import homography
+from ref import homography, sift
 
 
 def sift_show(imagename, resultname):
@@ -66,6 +69,20 @@ def cube_points(c, wid):
     p.append([c[0] + wid, c[1] - wid, c[2] + wid])
     p.append([c[0] + wid, c[1] - wid, c[2] - wid])
     return array(p).T
+
+
+def get_sift_features(img_name, is_cache=False, tmp_dir='/tmp'):
+    """
+    get sift features
+    :param img_name:
+    :param is_cache:
+    :param tmp_dir: tmp dir, default is Linux /tmp
+    :return: l, des
+    """
+    tmp_file = '{}/{}.sift'.format(tmp_dir, hashlib.md5(img_name).hexdigest())
+    sift.process_image(img_name, tmp_file) if not is_cache or not os.path.exists(tmp_file) else None
+    l1, d1 = read_features_from_file(tmp_file)
+    return l1, d1
 
 
 if __name__ == '__main__':
