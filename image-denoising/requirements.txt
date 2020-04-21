@@ -1,5 +1,6 @@
 numpy
-pillow==5.0.0
+# ==5.0.0
+pillow
 scipy==1.0.1
 matplotlib
 
